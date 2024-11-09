@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaArrowRight, FaPlus } from 'react-icons/fa';
 import logoImage from '../assets/logo.png';
 
@@ -176,7 +177,10 @@ const BoldLabel = styled.span`
   color: #000;
 `;
 
+
+
 const MapList = () => {
+  const navigate = useNavigate();
   // 맵 데이터 샘플
   const mapsData = [
     { id: 1, name: '맵 이름 1', image: logoImage },
@@ -210,7 +214,7 @@ const MapList = () => {
               <MapName>{map.name}</MapName>
             </MapCard>
           ))}
-          <AddMapCard>
+          <AddMapCard onClick={() => navigate('/map/search')}>
             <FaPlus />
           </AddMapCard>
         </MapGrid>
