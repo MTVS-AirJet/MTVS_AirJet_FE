@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import logoImage from '../assets/back.jpg';
 
 // Styled Components
@@ -9,7 +10,7 @@ const Container = styled.div`
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-image: url('${logoImage}'); /* 배경 이미지 경로 */
+  background-image: url('${logoImage}');
   background-size: cover;
   background-position: center;
 `;
@@ -25,19 +26,11 @@ const Modal = styled.div`
   gap: 20px; /* 좌우 간격 */
 `;
 
-const ImageWrapper = styled.div`
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
-
-const MapImage = styled.img`
-  width: 100%;
-  max-width: 350px;
-  height: auto;
-  object-fit: cover;
+const MapWrapper = styled.div`
+  width: 370px;
+  height: 370px;
   border-radius: 5px;
+  overflow: hidden;
 `;
 
 const InputWrapper = styled.div`
@@ -71,10 +64,6 @@ const LocalNameInput = styled.input`
   background-color: white;
 `;
 
-const LatitudLongitudeInputWrapper = styled.input`
-  
-`
-
 const LatitudLongitudeInput = styled.input`
   padding: 10px;
   width: 70%;
@@ -99,6 +88,10 @@ const Button = styled.button`
   }
 `;
 
+const MissionButton = styled(Button)`
+  width: 100%;
+`;
+
 const CloseButton = styled.button`
   position: absolute;
   top: 10px;
@@ -109,23 +102,44 @@ const CloseButton = styled.button`
   cursor: pointer;
 `;
 
-const MissionButton = styled(Button)`
-  width: 100%;
-`;
-
 const MapSearch = () => {
   const navigate = useNavigate();
+  const mapRef = useRef(null); // Google Maps 인스턴스를 참조
 
   // 상태 관리
   const [region, setRegion] = useState('');
-  const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
+  const [latitude, setLatitude] = useState(37.7749); // 기본값: 샌프란시스코
+  const [longitude, setLongitude] = useState(-122.4194);
+
+  // 5km 범위의 LatLngBounds 계산
+  const getBounds = (lat, lng) => {
+    const R = 6371; // 지구 반지름 (단위: km)
+    const distance = 2.5; // 반지름 거리 (단위: km)
+    const latDelta = (distance / R) * (180 / Math.PI); // 위도 차이
+    const lngDelta = (distance / R) * (180 / Math.PI) / Math.cos((lat * Math.PI) / 180); // 경도 차이
+
+    return {
+      south: lat - latDelta,
+      west: lng - lngDelta,
+      north: lat + latDelta,
+      east: lng + lngDelta,
+    };
+  };
+
+  useEffect(() => {
+    if (mapRef.current) {
+      const bounds = new window.google.maps.LatLngBounds(
+        { lat: getBounds(latitude, longitude).south, lng: getBounds(latitude, longitude).west },
+        { lat: getBounds(latitude, longitude).north, lng: getBounds(latitude, longitude).east }
+      );
+      mapRef.current.fitBounds(bounds); // 지도 영역을 맞춤
+    }
+  }, [latitude, longitude]);
 
   // 지역명 검색 핸들러
   const handleSearch = () => {
-    // Mock 데이터 (API 연동 시 실제 데이터로 대체)
     const mockData = {
-      '대평리': { latitude: '37.12345', longitude: '127.12345' },
+      '대평리': { latitude: 37.12345, longitude: 127.12345 },
     };
 
     if (mockData[region]) {
@@ -136,17 +150,25 @@ const MapSearch = () => {
     }
   };
 
-  // 미션 생성 버튼 핸들러
-  const handleMissionCreate = () => {
-    navigate('/next-page', { state: { region, latitude, longitude } });
-  };
-
   return (
     <Container>
       <Modal>
-        <ImageWrapper>
-          <MapImage src={logoImage} alt="Map Preview" />
-        </ImageWrapper>
+        <MapWrapper>
+          <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
+            <GoogleMap
+              mapContainerStyle={{ width: '100%', height: '100%' }}
+              center={{ lat: latitude, lng: longitude }}
+              zoom={14}
+              options={{
+                mapTypeId: 'satellite',
+                disableDefaultUI: true, // 기본 UI 비활성화
+              }}
+              onLoad={(map) => (mapRef.current = map)} // Google Maps 인스턴스 참조 저장
+            >
+              <Marker position={{ lat: latitude, lng: longitude }} />
+            </GoogleMap>
+          </LoadScript>
+        </MapWrapper>
         <InputWrapper>
           <Title>Create Mission (Map)</Title>
           <InputGroup>
@@ -159,12 +181,24 @@ const MapSearch = () => {
             <Button onClick={handleSearch}>검색</Button>
           </InputGroup>
           <InputGroup>
-            <LatitudLongitudeInput type="text" placeholder='위도 : ' value={latitude} readOnly />
+            <LatitudLongitudeInput
+              type="text"
+              placeholder="위도 : "
+              value={`위도 : ${latitude}`}
+              readOnly
+            />
           </InputGroup>
           <InputGroup>
-            <LatitudLongitudeInput type="text" placeholder='경도 : ' value={longitude} readOnly />
+            <LatitudLongitudeInput
+              type="text"
+              placeholder="경도 : "
+              value={`경도 : ${longitude}`}
+              readOnly
+            />
           </InputGroup>
-          <MissionButton onClick={handleMissionCreate}>미션 만들기</MissionButton>
+          <MissionButton onClick={() => navigate('/map/create', { state: { region, latitude, longitude } })}>
+            미션 만들기
+          </MissionButton>
         </InputWrapper>
         <CloseButton onClick={() => navigate(-1)}>X</CloseButton>
       </Modal>
