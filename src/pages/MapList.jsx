@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaArrowRight, FaPlus, FaCopy } from 'react-icons/fa';
-import logoImage from '../assets/logo.png';
+import logoImage from '../assets/back.jpg';
 
 // Styled Components
 const Container = styled.div`
@@ -23,7 +23,7 @@ const Overlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.9); /* 흰색 반투명 오버레이 */
+  background-color: rgba(255, 255, 255, 0.7); /* 흰색 반투명 오버레이 */
   z-index: 0;
   pointer-events: none;
 `;
@@ -42,6 +42,7 @@ const LeftPanel = styled.div`
   font-size: 0.85rem;
   margin-left: 100px;
   width: 100%;
+  margin-top: -20px;
   max-width: 800px; /* RightPanel의 최대 너비 제한 */
   display: flex;
   flex-direction: column;
@@ -51,7 +52,7 @@ const LeftPanel = styled.div`
 `;
 
 const Title = styled.h1`
-  font-size: 1.8rem; /* 제목 크기 조정 */
+  font-size: 2.5rem; /* 제목 크기 조정 */
   font-weight: bold;
   margin-bottom: 10px;
 `;
@@ -59,10 +60,10 @@ const Title = styled.h1`
 const Description = styled.div`
   font-size: 1.11rem;
   text-align: center;
-  margin-bottom: 15px; /* 간격 조정 */
+  margin-bottom: 5px; /* 간격 조정 */
   border: 2.5px solid #000;
   padding: 8px;
-  background-color: white;
+  background-color: #ebebeb;
   width: 80%;
   font-weight: bold;
 `;
@@ -75,30 +76,31 @@ const MapGrid = styled.div`
 `;
 
 const MapCard = styled.div`
-  border: 5px solid ${(props) => (props.selected ? '#009bff' : '#aaa')};
-  border-radius: 5px;
+  border: 7px solid ${(props) => (props.selected ? '#009aaa' : '#aaa')};
+  border-radius: 10px;
   overflow: hidden;
   width: 300px; /* 크기 축소 */
-  height: 320px;
+  height: 300px;
   cursor: pointer;
   transition: border-color 0.3s;
   display: flex;
   flex-direction: column;
   align-items: center;
   &:hover {
-    border-color: #000000;
+    border-color: #009eee;
   }
 `;
 
 const MapImage = styled.img`
-  width: 290px;
-  height: 290px;
+  width: 285px;
+  height: 285px;
   object-fit: cover;
-  margin-top: 1.5px;
+  margin-top: 3px;
 `;
 
 const MapName = styled.p`
   font-size: 1rem;
+  font-weight: bold;
   text-align: center;
   margin-top: 1px;
 `;
@@ -110,10 +112,10 @@ const AddMapCard = styled.div`
   border: 2px dashed #000;
   border-radius: 5px;
   width: 300px;
-  height: 320px;
+  height: 300px;
   cursor: pointer;
-  font-size: 1.5rem;
-  color: #000;
+  font-size:13rem;
+  color: #009aaa;
   transition: color 0.3s;
   &:hover {
     color: #007bff;
@@ -129,7 +131,7 @@ const NavigationButtons = styled.div`
 const NavButton = styled.button`
   background: none;
   border: none;
-  font-size: 1.2rem;
+  font-size: 3rem;
   cursor: pointer;
   margin: 0 5px;
   color: #555;
@@ -141,13 +143,13 @@ const NavButton = styled.button`
 const RightPanel = styled.div`
   flex: 1;
   border: 3px solid #000;
-  background-color: white;
+  background-color: #ebebeb;
   padding: 15px;
   font-size: 0.85rem;
   margin-left: 100px;
   margin-right: 30px;
   width: 100%;
-  height: 700px;
+  height: 720px;
   max-width: 700px; /* RightPanel의 최대 너비 제한 */
   margin-top: 92px;
   display: flex;
@@ -161,12 +163,13 @@ const MapDetailImage = styled.img`
   width: 400px;
   height: 400px; /* 이미지 크기를 줄여 공간 확보 */
   object-fit: cover;
+  border: 5px solid #000;
   border-radius: 5px;
   margin-bottom: 10px;
 `;
 
 const DetailText = styled.p`
-  font-size: 1rem;
+  font-size: 1.2rem;
   line-height: 1.2;
   color: #333;
   margin: 3px 0;
@@ -200,9 +203,9 @@ const MapList = () => {
   const navigate = useNavigate();
   // 맵 데이터 샘플
   const mapsData = [
-    { id: 1, name: '맵 이름 1', image: logoImage },
-    { id: 2, name: '맵 이름 2', image: logoImage },
-    { id: 3, name: '맵 이름 3', image: logoImage },
+    { id: 1, name: 'test_map2', image: logoImage },
+    { id: 2, name: '몰타 섬', image: logoImage },
+    { id: 3, name: 'test_map', image: logoImage },
   ];
 
   // 선택된 맵 상태 관리
@@ -232,7 +235,7 @@ const MapList = () => {
       <LeftPanel>
         <Title>Map List</Title>
         <Description>
-          현재 플레이할 수 있는 맵 목록입니다. 새롭게 만들거나, 기존의 맵을 응용할 수 있습니다.
+          현재 플레이할 수 있는 맵 목록입니다. <br />새롭게 만들거나, 기존의 맵을 응용할 수 있습니다.
         </Description>
         <MapGrid>
           {mapsData.map((map) => (
