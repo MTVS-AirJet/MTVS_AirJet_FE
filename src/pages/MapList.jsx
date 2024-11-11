@@ -82,10 +82,12 @@ const MapCard = styled.div`
   width: 300px; /* 크기 축소 */
   height: 300px;
   cursor: pointer;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, background-color 0.3s, opacity 0.3s;
   display: flex;
   flex-direction: column;
   align-items: center;
+  background-color: ${(props) => (props.selected ? 'rgba(0, 0, 0, 0.5)' : 'white')};
+  opacity: ${(props) => (props.selected ? 0.8 : 1)}; /* 선택되면 전체 어둡게 */
   &:hover {
     border-color: #009eee;
   }
@@ -96,6 +98,7 @@ const MapImage = styled.img`
   height: 285px;
   object-fit: cover;
   margin-top: 3px;
+  opacity: 1;
 `;
 
 const MapName = styled.p`
@@ -103,6 +106,7 @@ const MapName = styled.p`
   font-weight: bold;
   text-align: center;
   margin-top: 1px;
+  opacity: 1;
 `;
 
 const AddMapCard = styled.div`

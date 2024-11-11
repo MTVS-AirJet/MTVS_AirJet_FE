@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
@@ -16,14 +16,54 @@ const Container = styled.div`
 `;
 
 const Modal = styled.div`
-  background-color: rgba(255, 255, 255, 0.95); /* 반투명 효과 */
+  background-color: rgba(255, 255, 255, 0.95);
   padding: 20px;
   border-radius: 10px;
   width: 800px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   background-color: #b6e3ffd9;
-  display: flex; /* 좌우 배치 */
-  gap: 20px; /* 좌우 간격 */
+  display: flex;
+  gap: 20px;
+`;
+
+const CenterMarkerWrapper = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+`;
+
+const CenterMarker = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background-color: rgba(255, 0, 0, 0.8);
+  border: 2px solid white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+`;
+
+const HorizontalLine = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: rgba(0, 0, 0, 0.5);
+`;
+
+const VerticalLine = styled.div`
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
 `;
 
 const MapWrapper = styled.div`
@@ -31,7 +71,7 @@ const MapWrapper = styled.div`
   height: 370px;
   border-radius: 5px;
   overflow: hidden;
-  position: relative; /* 캡처를 위한 위치 설정 */
+  position: relative;
 `;
 
 const InputWrapper = styled.div`
@@ -72,7 +112,7 @@ const LatitudLongitudeInput = styled.input`
   border-radius: 5px;
   font-size: 1rem;
   &::placeholder {
-    color: black; /* 원하는 색상으로 변경 */
+    color: black;
   }
 `;
 
@@ -103,52 +143,56 @@ const CloseButton = styled.button`
   cursor: pointer;
 `;
 
-
-
 const MapSearch = () => {
   const navigate = useNavigate();
-  const mapRef = useRef(null); // Google Maps 인스턴스를 참조
+  const mapRef = useRef(null);
 
-  // 상태 관리
   const [region, setRegion] = useState('');
-  const [latitude, setLatitude] = useState(37.7749); // 기본값: 샌프란시스코
+  const [latitude, setLatitude] = useState(37.7749);
   const [longitude, setLongitude] = useState(-122.4194);
 
-  const zoom = 14; // 줌 레벨 고정
+  const zoom = 14;
 
-  // 정적 지도 URL 생성 함수
+  // 지도 중심 업데이트 함수
+  const updateMapCenter = (lat, lng) => {
+    if (mapRef.current) {
+      mapRef.current.panTo({ lat, lng });
+    }
+  };
+
+  // 맵 드래그가 끝난 후 호출되는 핸들러
+  const handleMapDragEnd = () => {
+    if (mapRef.current) {
+      const center = mapRef.current.getCenter();
+      setLatitude(center.lat());
+      setLongitude(center.lng());
+    }
+  };
+
+  
+
+  // 위도/경도 입력 핸들러
+  const handleLatitudeChange = (e) => {
+    const newLatitude = parseFloat(e.target.value);
+    setLatitude(newLatitude);
+    updateMapCenter(newLatitude, longitude);
+  };
+  
+
+  const handleLongitudeChange = (e) => {
+    const newLongitude = parseFloat(e.target.value);
+    setLongitude(newLongitude);
+    updateMapCenter(latitude, newLongitude);
+  };
+
   const getStaticMapUrl = (lat, lng, zoomLevel) => {
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    const size = '640x640'; // 이미지 크기
+    const size = '640x640';
     const mapType = 'satellite';
 
     return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoomLevel}&size=${size}&maptype=${mapType}&key=${apiKey}`;
   };
 
-  // // Bounding Box Calculation
-  // const getStaticMapUrl = (lat, lng, distance = 3) => {
-  //   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY; // Google Maps API 키
-  //   const size = '640x640'; // 이미지 크기
-  //   const mapType = 'satellite';
-  //   const zoom = 14; // 확대 레벨
-
-  //   const R = 6371; // Earth Radius in km
-  //   const latDelta = (distance / R) * (180 / Math.PI); // 위도 차이
-  //   const lngDelta =
-  //     (distance / R) * (180 / Math.PI) / Math.cos((lat * Math.PI) / 180); // 경도 차이
-
-  //   const bounds = {
-  //     north: lat + latDelta,
-  //     south: lat - latDelta,
-  //     east: lng + lngDelta,
-  //     west: lng - lngDelta,
-  //   };
-
-  //   // URL for static map with markers for bounding box corners
-  //   return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${size}&maptype=${mapType}&key=${apiKey}`;
-  // };
-
-  // 지역명 검색 핸들러
   const handleSearch = () => {
     const mockData = {
       '대평리': { latitude: 37.12345, longitude: 127.12345 },
@@ -157,27 +201,16 @@ const MapSearch = () => {
     if (mockData[region]) {
       setLatitude(mockData[region].latitude);
       setLongitude(mockData[region].longitude);
+      updateMapCenter(mockData[region].latitude, mockData[region].longitude);
     } else {
       alert('지역명을 찾을 수 없습니다.');
     }
   };
 
-  // 지도 캡처 핸들러
   const handleCapture = () => {
-    const imageData = getStaticMapUrl(latitude, longitude, zoom); // 동일한 zoom 값 사용
+    const imageData = getStaticMapUrl(latitude, longitude, zoom);
     navigate('/map/create', { state: { region, latitude, longitude, imageData } });
   };
-
-  
-
-  // const getStaticMapUrl = (latitude, longitude) => {
-  //   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY; // Google Maps API 키
-  //   const zoom = 15;
-  //   const size = '640x640'; // 이미지 크기
-  //   const mapType = 'satellite';
-  
-  //   return `https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&zoom=${zoom}&size=${size}&maptype=${mapType}&key=${apiKey}`;
-  // };
 
   return (
     <Container>
@@ -187,16 +220,25 @@ const MapSearch = () => {
             <GoogleMap
               mapContainerStyle={{ width: '100%', height: '100%' }}
               center={{ lat: latitude, lng: longitude }}
-              zoom={zoom} // 동일한 줌 값 사용
+              zoom={zoom}
               options={{
                 mapTypeId: 'satellite',
-                disableDefaultUI: true, // 기본 UI 비활성화
+                disableDefaultUI: true,
+                gestureHandling: 'pan',
+                scrollwheel: false,
+                zoomControl: false,
               }}
               onLoad={(map) => (mapRef.current = map)}
+              onDragEnd={handleMapDragEnd} // 드래그 종료 시 호출
             >
               <Marker position={{ lat: latitude, lng: longitude }} />
             </GoogleMap>
           </LoadScript>
+          <CenterMarkerWrapper>
+            <HorizontalLine />
+            <VerticalLine />
+            <CenterMarker />
+          </CenterMarkerWrapper>
         </MapWrapper>
         <InputWrapper>
           <Title>Create Mission (Map)</Title>
@@ -211,18 +253,18 @@ const MapSearch = () => {
           </InputGroup>
           <InputGroup>
             <LatitudLongitudeInput
-              type="text"
+              type="number"
               placeholder="위도 : "
-              value={`위도 : ${latitude}`}
-              readOnly
+              value={latitude}
+              onChange={handleLatitudeChange}
             />
           </InputGroup>
           <InputGroup>
             <LatitudLongitudeInput
-              type="text"
+              type="number"
               placeholder="경도 : "
-              value={`경도 : ${longitude}`}
-              readOnly
+              value={longitude}
+              onChange={handleLongitudeChange}
             />
           </InputGroup>
           <MissionButton onClick={handleCapture}>미션 만들기</MissionButton>
@@ -232,6 +274,5 @@ const MapSearch = () => {
     </Container>
   );
 };
-
 
 export default MapSearch;

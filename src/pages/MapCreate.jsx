@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useLocation } from 'react-router-dom';
-import mapImage from '../assets/back.jpg'; // 맵 이미지 경로
 import logoImage from '../assets/back.jpg';
 
 // Styled Components
@@ -37,7 +36,7 @@ const LeftSection = styled.div`
 `;
 
 const Title = styled.h1`
-  font-size: 1.5rem;
+  font-size: 2.1rem;
   font-weight: bold;
   margin-bottom: 10px;
 `;
@@ -85,6 +84,15 @@ const Pin = styled.div`
   cursor: pointer;
 `;
 
+const Lines = styled.svg`
+  position: absolute; /* 맵 위에 겹치도록 설정 */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* 선 위에 마우스 이벤트가 발생하지 않도록 설정 */
+`;
+
 const RightSection = styled.div`
   flex: 3;
   display: flex;
@@ -104,15 +112,16 @@ const InfoRow = styled.div`
   display: flex;
   justify-content: center; /* 가로 가운데 정렬 */
   align-items: center; /* 세로 가운데 정렬 */
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   padding: 10px; /* 내부 여백 추가 */
   border: 2px solid #ccc; /* 직사각형 테두리 */
   border-radius: 5px; /* 테두리 모서리 둥글게 */
   background-color: #ddd; /* 배경색 */
-  width: 200px; /* 전체 너비 */
+  width: 320px; /* 전체 너비 */
   height: 15px; /* 높이를 설정해 세로 정렬 */
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* 약간의 그림자 */
   text-align: center; /* 텍스트 정렬 */
+  font-weight: bold;
 `;
 
 const SelectGroup = styled.div`
@@ -189,6 +198,10 @@ const MapCreate = () => {
 
   // 지도 클릭 핸들러
   const handleMapClick = (e) => {
+    if (pins.length >= 5) {
+      alert('최대 5개의 핀만 생성할 수 있습니다.');
+      return;
+    }
     const rect = e.target.getBoundingClientRect(); // 지도 이미지의 크기와 위치
     const x = e.clientX - rect.left; // 클릭한 X 좌표
     const y = e.clientY - rect.top; // 클릭한 Y 좌표
@@ -203,9 +216,17 @@ const MapCreate = () => {
       { id: prevPins.length + 1, blockX, blockY, screenX: x, screenY: y },
     ]);
   };
-  // 핀 삭제 핸들러
-  const handlePinRemove = (id) => {
-    setPins((prevPins) => prevPins.filter((pin) => pin.id !== id)); // 특정 핀 삭제
+
+    // 핀 삭제 핸들러
+    const handlePinRemove = (id) => {
+    setPins((prevPins) => {
+      // 특정 핀 삭제 후 나머지 핀들의 id를 재정렬
+      const updatedPins = prevPins.filter((pin) => pin.id !== id);
+      return updatedPins.map((pin, index) => ({
+        ...pin,
+        id: index + 1, // 새롭게 1부터 번호 재배정
+      }));
+    });
   };
 
   const handleMissionChange = (id, value) => {
@@ -239,6 +260,14 @@ const MapCreate = () => {
             ) : (
               <p>맵 이미지를 불러올 수 없습니다.</p>
             )}
+            <Lines>
+              <polyline
+                points={pins.map((pin) => `${pin.screenX},${pin.screenY}`).join(' ')}
+                stroke="black"
+                strokeWidth="2"
+                fill="none"
+              />
+            </Lines>
             {pins.map((pin) => (
               <Pin
                 key={pin.id}
@@ -256,12 +285,10 @@ const MapCreate = () => {
         <RightSection>
           <LocationInfo>
             <InfoRow>
-              <span>위도: </span>
-              <span>{latitude}</span>
+              <span>지도를 클릭하면 핀이 생성됩니다.</span>
             </InfoRow>
             <InfoRow>
-              <span>경도: </span>
-              <span>{longitude}</span>
+              <span>핀을 클릭하면 핀이 삭제됩니다.</span>
             </InfoRow>
           </LocationInfo>
           <SelectGroup>
