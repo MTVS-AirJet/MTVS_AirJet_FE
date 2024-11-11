@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaArrowRight, FaPlus } from 'react-icons/fa';
+import { FaArrowLeft, FaArrowRight, FaPlus, FaCopy } from 'react-icons/fa';
 import logoImage from '../assets/logo.png';
 
 // Styled Components
@@ -177,6 +177,23 @@ const BoldLabel = styled.span`
   color: #000;
 `;
 
+const CopyButton = styled.button`
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  &:hover {
+    background-color: #0056b3;
+  }
+`;
+
 
 
 const MapList = () => {
@@ -191,6 +208,23 @@ const MapList = () => {
   // 선택된 맵 상태 관리
   const [selectedMap, setSelectedMap] = useState(mapsData[0]);
 
+  // 맵 이름 복사 로직
+  const handleCopyText = () => {
+    const textArea = document.createElement('textarea');
+    textArea.value = selectedMap.name;
+    document.body.appendChild(textArea);
+    textArea.select();
+    textArea.setSelectionRange(0, 99999); // 선택 범위 설정
+
+    try {
+      document.execCommand('copy'); // 텍스트 복사
+      alert(`맵 이름이 복사되었습니다! 맵 이름: ${selectedMap.name}`);
+    } catch (err) {
+      console.error('복사 실패:', err); // 복사 실패 시 오류 출력
+    }
+
+    document.body.removeChild(textArea); // 텍스트 영역 제거
+  };
   return (
     <Container style={{ backgroundImage: `url(${logoImage})` }}>
       <Overlay />
@@ -249,6 +283,9 @@ const MapList = () => {
         <DetailText>
           <BoldLabel>수행해야 하는 미션:</BoldLabel> 을왕리 전투 상황
         </DetailText>
+        <CopyButton onClick={handleCopyText}>
+            <FaCopy /> 맵 이름 복사
+          </CopyButton>
       </RightPanel>
       </Content>
     </Container>
