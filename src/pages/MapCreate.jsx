@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import mapImage from '../assets/back.jpg'; // 맵 이미지 경로
 import logoImage from '../assets/back.jpg';
 
@@ -51,18 +51,38 @@ const Input = styled.input`
 `;
 
 const MapWrapper = styled.div`
+  position: relative; /* 핀을 배치하기 위한 relative 설정 */
   width: 520px;
   height: 520px;
   border: 3px solid #aaa;
   border-radius: 5px;
-  background-color: #f0f0f0; /* 맵 이미지 영역 */
   overflow: hidden;
+  cursor: pointer;
 `;
 
 const MapImage = styled.img`
   width: 520px;
   height: 520px;
-  object-fit: center;
+  // object-fit: center;
+  object-fit: cover;
+  border: 3px solid #aaa;
+  border-radius: 5px;
+`;
+
+const Pin = styled.div`
+  position: absolute; /* 핀이 지도 위에 위치하도록 설정 */
+  width: 20px;
+  height: 20px;
+  background-color: red;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: translate(-50%, -50%); /* 클릭 위치를 중심으로 설정 */
+  cursor: pointer;
 `;
 
 const RightSection = styled.div`
@@ -80,17 +100,6 @@ const LocationInfo = styled.div`
   gap: 10px;
 `;
 
-// const InfoRow = styled.div`
-//   display: flex;
-//   font-size: 1.3rem;
-//   align-items: center; /* 텍스트 정렬 */
-//   padding: 10px; /* 내부 여백 추가 */
-//   border: 2px solid #ccc; /* 직사각형 테두리 */
-//   border-radius: 5px; /* 테두리 모서리 둥글게 */
-//   background-color: #f9f9f9; /* 배경색 */
-//   width: 100%; /* 전체 너비 */
-//   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* 약간의 그림자 */
-// `;
 const InfoRow = styled.div`
   display: flex;
   justify-content: center; /* 가로 가운데 정렬 */
@@ -170,18 +179,34 @@ const PinNumber = styled.div`
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2); /* 약간의 그림자 */
 `;
 
-const CreateSession = () => {
+const MapCreate = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [roomName, setRoomName] = useState('짱짱맨');
-  const [latitude, setLatitude] = useState('35.892515');
-  const [longitude, setLongitude] = useState('14.444430');
-  const [pins, setPins] = useState([
-    { id: 1, mission: '최저속도제한' },
-    { id: 2, mission: '' },
-    { id: 3, mission: '' },
-    { id: 4, mission: '' },
-  ]);
+  const { latitude, longitude, imageData } = location.state || {};
+  const [roomName, setRoomName] = React.useState('짱짱맨');
+  const [pins, setPins] = useState([]);
+
+  // 지도 클릭 핸들러
+  const handleMapClick = (e) => {
+    const rect = e.target.getBoundingClientRect(); // 지도 이미지의 크기와 위치
+    const x = e.clientX - rect.left; // 클릭한 X 좌표
+    const y = e.clientY - rect.top; // 클릭한 Y 좌표
+
+    // 클릭한 위치를 기준으로 가장 가까운 블록 계산
+    const blockX = Math.round((x / rect.width) * 100); // 100x100 블록 기준 X 좌표
+    const blockY = Math.round((y / rect.height) * 100); // 100x100 블록 기준 Y 좌표
+
+    // 새로운 핀 추가
+    setPins((prevPins) => [
+      ...prevPins,
+      { id: prevPins.length + 1, blockX, blockY, screenX: x, screenY: y },
+    ]);
+  };
+  // 핀 삭제 핸들러
+  const handlePinRemove = (id) => {
+    setPins((prevPins) => prevPins.filter((pin) => pin.id !== id)); // 특정 핀 삭제
+  };
 
   const handleMissionChange = (id, value) => {
     setPins((prev) =>
@@ -192,7 +217,8 @@ const CreateSession = () => {
   const handleSave = () => {
     console.log('Room Name:', roomName);
     console.log('Pins:', pins);
-    navigate('/next-page', { state: { roomName, latitude, longitude, pins } });
+    // api 호출 로직으로 변경
+    navigate('/', { state: { roomName, latitude, longitude, pins } });
   };
 
   return (
@@ -203,11 +229,28 @@ const CreateSession = () => {
           <Title>-Create Session-</Title>
           <Input
             type="text"
-            value={roomName}
+            // value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
+            placeholder='맵 이름을 입력해주세요.'
           />
-          <MapWrapper>
-            <MapImage src={mapImage} alt="Map Preview" />
+          <MapWrapper onClick={handleMapClick}>
+            {imageData ? (
+              <MapImage src={imageData} alt="Dynamic Map Preview" />
+            ) : (
+              <p>맵 이미지를 불러올 수 없습니다.</p>
+            )}
+            {pins.map((pin) => (
+              <Pin
+                key={pin.id}
+                style={{ left: `${pin.screenX}px`, top: `${pin.screenY}px` }}
+                onClick={(e) => {
+                  e.stopPropagation(); // 부모 클릭 이벤트 차단
+                  handlePinRemove(pin.id); // 핀 삭제
+                }}
+              >
+                {pin.id}
+              </Pin>
+            ))}
           </MapWrapper>
         </LeftSection>
         <RightSection>
@@ -229,7 +272,7 @@ const CreateSession = () => {
                   value={pin.mission}
                   onChange={(e) => handleMissionChange(pin.id, e.target.value)}
                 >
-                  <option value="">Mission</option>
+                  <option value="">미션 선택</option>
                   <option value="최저속도제한">최저속도제한</option>
                   <option value="고속도달">고속도달</option>
                   <option value="탐지">탐지</option>
@@ -244,4 +287,4 @@ const CreateSession = () => {
   );
 };
 
-export default CreateSession;
+export default MapCreate;

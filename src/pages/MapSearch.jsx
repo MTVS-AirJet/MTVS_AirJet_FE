@@ -31,6 +31,7 @@ const MapWrapper = styled.div`
   height: 370px;
   border-radius: 5px;
   overflow: hidden;
+  position: relative; /* 캡처를 위한 위치 설정 */
 `;
 
 const InputWrapper = styled.div`
@@ -102,6 +103,8 @@ const CloseButton = styled.button`
   cursor: pointer;
 `;
 
+
+
 const MapSearch = () => {
   const navigate = useNavigate();
   const mapRef = useRef(null); // Google Maps 인스턴스를 참조
@@ -111,30 +114,39 @@ const MapSearch = () => {
   const [latitude, setLatitude] = useState(37.7749); // 기본값: 샌프란시스코
   const [longitude, setLongitude] = useState(-122.4194);
 
-  // 5km 범위의 LatLngBounds 계산
-  const getBounds = (lat, lng) => {
-    const R = 6371; // 지구 반지름 (단위: km)
-    const distance = 2.5; // 반지름 거리 (단위: km)
-    const latDelta = (distance / R) * (180 / Math.PI); // 위도 차이
-    const lngDelta = (distance / R) * (180 / Math.PI) / Math.cos((lat * Math.PI) / 180); // 경도 차이
+  const zoom = 14; // 줌 레벨 고정
 
-    return {
-      south: lat - latDelta,
-      west: lng - lngDelta,
-      north: lat + latDelta,
-      east: lng + lngDelta,
-    };
+  // 정적 지도 URL 생성 함수
+  const getStaticMapUrl = (lat, lng, zoomLevel) => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    const size = '640x640'; // 이미지 크기
+    const mapType = 'satellite';
+
+    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoomLevel}&size=${size}&maptype=${mapType}&key=${apiKey}`;
   };
 
-  useEffect(() => {
-    if (mapRef.current) {
-      const bounds = new window.google.maps.LatLngBounds(
-        { lat: getBounds(latitude, longitude).south, lng: getBounds(latitude, longitude).west },
-        { lat: getBounds(latitude, longitude).north, lng: getBounds(latitude, longitude).east }
-      );
-      mapRef.current.fitBounds(bounds); // 지도 영역을 맞춤
-    }
-  }, [latitude, longitude]);
+  // // Bounding Box Calculation
+  // const getStaticMapUrl = (lat, lng, distance = 3) => {
+  //   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY; // Google Maps API 키
+  //   const size = '640x640'; // 이미지 크기
+  //   const mapType = 'satellite';
+  //   const zoom = 14; // 확대 레벨
+
+  //   const R = 6371; // Earth Radius in km
+  //   const latDelta = (distance / R) * (180 / Math.PI); // 위도 차이
+  //   const lngDelta =
+  //     (distance / R) * (180 / Math.PI) / Math.cos((lat * Math.PI) / 180); // 경도 차이
+
+  //   const bounds = {
+  //     north: lat + latDelta,
+  //     south: lat - latDelta,
+  //     east: lng + lngDelta,
+  //     west: lng - lngDelta,
+  //   };
+
+  //   // URL for static map with markers for bounding box corners
+  //   return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${size}&maptype=${mapType}&key=${apiKey}`;
+  // };
 
   // 지역명 검색 핸들러
   const handleSearch = () => {
@@ -150,6 +162,23 @@ const MapSearch = () => {
     }
   };
 
+  // 지도 캡처 핸들러
+  const handleCapture = () => {
+    const imageData = getStaticMapUrl(latitude, longitude, zoom); // 동일한 zoom 값 사용
+    navigate('/map/create', { state: { region, latitude, longitude, imageData } });
+  };
+
+  
+
+  // const getStaticMapUrl = (latitude, longitude) => {
+  //   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY; // Google Maps API 키
+  //   const zoom = 15;
+  //   const size = '640x640'; // 이미지 크기
+  //   const mapType = 'satellite';
+  
+  //   return `https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&zoom=${zoom}&size=${size}&maptype=${mapType}&key=${apiKey}`;
+  // };
+
   return (
     <Container>
       <Modal>
@@ -158,12 +187,12 @@ const MapSearch = () => {
             <GoogleMap
               mapContainerStyle={{ width: '100%', height: '100%' }}
               center={{ lat: latitude, lng: longitude }}
-              zoom={14}
+              zoom={zoom} // 동일한 줌 값 사용
               options={{
                 mapTypeId: 'satellite',
                 disableDefaultUI: true, // 기본 UI 비활성화
               }}
-              onLoad={(map) => (mapRef.current = map)} // Google Maps 인스턴스 참조 저장
+              onLoad={(map) => (mapRef.current = map)}
             >
               <Marker position={{ lat: latitude, lng: longitude }} />
             </GoogleMap>
@@ -196,14 +225,13 @@ const MapSearch = () => {
               readOnly
             />
           </InputGroup>
-          <MissionButton onClick={() => navigate('/map/create', { state: { region, latitude, longitude } })}>
-            미션 만들기
-          </MissionButton>
+          <MissionButton onClick={handleCapture}>미션 만들기</MissionButton>
         </InputWrapper>
         <CloseButton onClick={() => navigate(-1)}>X</CloseButton>
       </Modal>
     </Container>
   );
 };
+
 
 export default MapSearch;
