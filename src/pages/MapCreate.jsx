@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logoImage from '../assets/back.jpg';
+import axios from 'axios';
 
 // Styled Components
 const Container = styled.div`
@@ -193,7 +194,7 @@ const MapCreate = () => {
   const location = useLocation();
 
   const { latitude, longitude, imageData } = location.state || {};
-  const [roomName, setRoomName] = React.useState('짱짱맨');
+  const [roomName, setRoomName] = React.useState('a');
   const [pins, setPins] = useState([]);
 
   // 지도 클릭 핸들러
@@ -206,14 +207,22 @@ const MapCreate = () => {
     const x = e.clientX - rect.left; // 클릭한 X 좌표
     const y = e.clientY - rect.top; // 클릭한 Y 좌표
 
-    // 클릭한 위치를 기준으로 가장 가까운 블록 계산
-    const blockX = Math.round((x / rect.width) * 100); // 100x100 블록 기준 X 좌표
-    const blockY = Math.round((y / rect.height) * 100); // 100x100 블록 기준 Y 좌표
+   // Y 값을 반대로 변환
+    const adjustedY = rect.height - y;
+
+    const blockX = Math.round((x / rect.width) * 100); // 블록 단위 X
+    const blockY = Math.round((adjustedY / rect.height) * 100); // 블록 단위 Y
 
     // 새로운 핀 추가
     setPins((prevPins) => [
       ...prevPins,
-      { id: prevPins.length + 1, blockX, blockY, screenX: x, screenY: y },
+      { id: prevPins.length + 1, 
+        blockX, 
+        blockY, 
+        screenX: x, 
+        screenY: y,
+        commandNo: "0", // 기본 미션 선택 번호
+        },
     ]);
   };
 
@@ -231,16 +240,43 @@ const MapCreate = () => {
 
   const handleMissionChange = (id, value) => {
     setPins((prev) =>
-      prev.map((pin) => (pin.id === id ? { ...pin, mission: value } : pin))
+      prev.map((pin) => (pin.id === id ? { ...pin, commandNo: value } : pin))
     );
   };
 
-  const handleSave = () => {
-    console.log('Room Name:', roomName);
-    console.log('Pins:', pins);
-    // api 호출 로직으로 변경
-    navigate('/', { state: { roomName, latitude, longitude, pins } });
+  const handleSave = async () => {
+    // Create the mapDTO object
+    const requestData = {
+      mapName: roomName,
+      latitude: latitude || 0, // Default to 0 if undefined
+      longitude: longitude || 0,
+      producer: "제작자", // Replace with a dynamic value if needed
+      mission: pins.map((pin) => ({
+        pinNo: pin.id,
+        x: pin.blockX,
+        y: pin.blockY,
+        commandNo: parseInt(pin.commandNo, 10), // 미션 번호를 정수로 변환
+      })),
+    };
+  
+    try {
+      // Send POST request to the server
+      const response = await axios.post("http://localhost:7757/test", requestData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+  
+      // Log server response
+      console.log("Server Response:", response.data);
+      alert("맵 저장 성공!");
+    } catch (error) {
+      // Handle errors
+      console.error("Error during POST request:", error.response?.data || error.message);
+      alert("Failed to save map.");
+    }
   };
+  
 
   return (
     <Container>
@@ -250,7 +286,7 @@ const MapCreate = () => {
           <Title>-Create Session-</Title>
           <Input
             type="text"
-            // value={roomName}
+            value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             placeholder='맵 이름을 입력해주세요.'
           />
@@ -296,13 +332,13 @@ const MapCreate = () => {
               <SelectWrapper key={pin.id}>
                 <PinNumber>{pin.id}</PinNumber>
                 <Select
-                  value={pin.mission}
+                  value={pin.commandNo}
                   onChange={(e) => handleMissionChange(pin.id, e.target.value)}
                 >
-                  <option value="">미션 선택</option>
-                  <option value="최저속도제한">최저속도제한</option>
-                  <option value="고속도달">고속도달</option>
-                  <option value="탐지">탐지</option>
+                  <option value="0">미션 선택</option>
+                  <option value="1">최저속도제한</option>
+                  <option value="2">고속도달</option>
+                  <option value="3">탐지</option>
                 </Select>
               </SelectWrapper>
             ))}

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import axios from 'axios';
 import logoImage from '../assets/back.jpg';
 
 // Styled Components
@@ -193,17 +194,30 @@ const MapSearch = () => {
     return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoomLevel}&size=${size}&maptype=${mapType}&key=${apiKey}`;
   };
 
-  const handleSearch = () => {
-    const mockData = {
-      '대평리': { latitude: 37.12345, longitude: 127.12345 },
-    };
+  // 지역 검색 핸들러
+  const handleSearch = async () => {
+    if (!region.trim()) {
+      alert('지역명을 입력해주세요.');
+      return;
+    }
 
-    if (mockData[region]) {
-      setLatitude(mockData[region].latitude);
-      setLongitude(mockData[region].longitude);
-      updateMapCenter(mockData[region].latitude, mockData[region].longitude);
-    } else {
-      alert('지역명을 찾을 수 없습니다.');
+    try {
+      const response = await axios.post(
+        'http://localhost:7757/api/geocode',
+        { text: region }
+      );
+
+      if (response.data) {
+        const { latitude: lat, longitude: lng } = response.data;
+        setLatitude(lat);
+        setLongitude(lng);
+        updateMapCenter(lat, lng);
+      } else {
+        alert('위치를 찾을 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('검색 요청 중 오류 발생:', error);
+      alert('검색 중 오류가 발생했습니다.');
     }
   };
 

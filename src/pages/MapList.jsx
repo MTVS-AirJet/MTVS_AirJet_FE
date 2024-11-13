@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaArrowRight, FaPlus, FaCopy } from 'react-icons/fa';
 import logoImage from '../assets/back.jpg';
+import axios from 'axios';
 
 // Styled Components
 const Container = styled.div`
@@ -13,6 +14,7 @@ const Container = styled.div`
   align-items: flex-start;
   box-sizing: border-box;
   position: relative;
+  background-image: url('${logoImage}');
   background-size: 100% 100%;
   background-position: center;
 `;
@@ -113,12 +115,12 @@ const AddMapCard = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px dashed #000;
+  border: 3px dashed #000;
   border-radius: 5px;
   width: 300px;
   height: 300px;
   cursor: pointer;
-  font-size:13rem;
+  font-size:10rem;
   color: #009aaa;
   transition: color 0.3s;
   &:hover {
@@ -205,95 +207,128 @@ const CopyButton = styled.button`
 
 const MapList = () => {
   const navigate = useNavigate();
-  // 맵 데이터 샘플
-  const mapsData = [
-    { id: 1, name: 'test_map2', image: logoImage },
-    { id: 2, name: '몰타 섬', image: logoImage },
-    { id: 3, name: 'test_map', image: logoImage },
-  ];
+  const [mapsData, setMapsData] = useState([]); // 맵 데이터 상태
+  const [selectedMap, setSelectedMap] = useState(null); // 선택된 맵 상태
 
-  // 선택된 맵 상태 관리
-  const [selectedMap, setSelectedMap] = useState(mapsData[0]);
+  // 데이터 가져오기
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get('http://localhost:7757/api/map/all');
+        if (response.data.success) {
+          setMapsData(response.data.response.content);
+          setSelectedMap(response.data.response.content[0]); // 첫 번째 맵 선택
+        }
+      } catch (error) {
+        console.error('맵 데이터를 가져오는 중 오류가 발생했습니다:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // 맵 이름 복사 로직
   const handleCopyText = () => {
+    if (!selectedMap) return;
+
     const textArea = document.createElement('textarea');
-    textArea.value = selectedMap.name;
+    textArea.value = selectedMap.mapName;
     document.body.appendChild(textArea);
     textArea.select();
     textArea.setSelectionRange(0, 99999); // 선택 범위 설정
 
     try {
       document.execCommand('copy'); // 텍스트 복사
-      alert(`맵 이름이 복사되었습니다! 맵 이름: ${selectedMap.name}`);
+      alert(`맵 이름이 복사되었습니다! 맵 이름: ${selectedMap.mapName}`);
     } catch (err) {
       console.error('복사 실패:', err); // 복사 실패 시 오류 출력
     }
 
     document.body.removeChild(textArea); // 텍스트 영역 제거
   };
+
+  // // 맵 이름 복사 로직
+  // const handleCopyText = () => {
+  //   const textArea = document.createElement('textarea');
+  //   textArea.value = selectedMap.name;
+  //   document.body.appendChild(textArea);
+  //   textArea.select();
+  //   textArea.setSelectionRange(0, 99999); // 선택 범위 설정
+
+  //   try {
+  //     document.execCommand('copy'); // 텍스트 복사
+  //     alert(`맵 이름이 복사되었습니다! 맵 이름: ${selectedMap.name}`);
+  //   } catch (err) {
+  //     console.error('복사 실패:', err); // 복사 실패 시 오류 출력
+  //   }
+
+  //   document.body.removeChild(textArea); // 텍스트 영역 제거
+  // };
   return (
-    <Container style={{ backgroundImage: `url(${logoImage})` }}>
+    <Container>
       <Overlay />
       <Content>
-      <LeftPanel>
-        <Title>Map List</Title>
-        <Description>
-          현재 플레이할 수 있는 맵 목록입니다. <br />새롭게 만들거나, 기존의 맵을 응용할 수 있습니다.
-        </Description>
-        <MapGrid>
-          {mapsData.map((map) => (
-            console.log('Rendering MapCard:', map.name),
-            <MapCard
-              key={map.id}
-              selected={map.id === selectedMap.id}
-              onClick={() => {
-                console.log('Selected map:', map);
-                setSelectedMap(map)}} // 선택된 맵 상태 갱신
-            >
-              <MapImage src={map.image} alt={map.name} />
-              <MapName>{map.name}</MapName>
-            </MapCard>
-          ))}
-          <AddMapCard onClick={() => navigate('/map/search')}>
-            <FaPlus />
-          </AddMapCard>
-        </MapGrid>
-        <NavigationButtons>
-          <NavButton>
-            <FaArrowLeft />
-          </NavButton>
-          <NavButton>
-            <FaArrowRight />
-          </NavButton>
-        </NavigationButtons>
-      </LeftPanel>
+        <LeftPanel>
+          <Title>Map List</Title>
+          <Description>
+            현재 플레이할 수 있는 맵 목록입니다. <br />
+            새롭게 만들거나, 기존의 맵을 응용할 수 있습니다.
+          </Description>
+          <MapGrid>
+            {mapsData.map((map) => (
+              <MapCard
+                key={map.id}
+                selected={selectedMap && map.id === selectedMap.id}
+                onClick={() => setSelectedMap(map)} // 선택된 맵 상태 갱신
+              >
+                <MapImage
+                  src={`http://localhost:7757/images/${map.mapImage}`}
+                  alt={map.mapName}
+                />
+                <MapName>{map.mapName}</MapName>
+              </MapCard>
+            ))}
+            <AddMapCard onClick={() => navigate('/map/search')}>
+              <FaPlus />
+            </AddMapCard>
+          </MapGrid>
+          <NavigationButtons>
+            <NavButton>
+              <FaArrowLeft />
+            </NavButton>
+            <NavButton>
+              <FaArrowRight />
+            </NavButton>
+          </NavigationButtons>
+        </LeftPanel>
 
-      {/* RightPanel에서 선택된 맵 데이터 사용 */}
-      <RightPanel>
-        <MapDetailImage src={selectedMap.image} alt={selectedMap.name} />
-        <DetailText>
-          <BoldLabel>맵 이름:</BoldLabel> {selectedMap.name}
-        </DetailText>
-        <DetailText>
-          <BoldLabel>제작자:</BoldLabel> 홍길동
-        </DetailText>
-        <DetailText>
-          <BoldLabel>맵 설명:</BoldLabel> 을왕리에서 전투를
-        </DetailText>
-        <DetailText>
-          <BoldLabel>위도:</BoldLabel> 37.4477331
-        </DetailText>
-        <DetailText>
-          <BoldLabel>경도:</BoldLabel> 126.3725042
-        </DetailText>
-        <DetailText>
-          <BoldLabel>수행해야 하는 미션:</BoldLabel> 을왕리 전투 상황
-        </DetailText>
-        <CopyButton onClick={handleCopyText}>
-            <FaCopy /> 맵 이름 복사
-          </CopyButton>
-      </RightPanel>
+        {/* RightPanel에서 선택된 맵 데이터 사용 */}
+        {selectedMap && (
+          <RightPanel>
+            <MapDetailImage
+              src={`http://localhost:7757/images/${selectedMap.mapImage}`}
+              alt={selectedMap.mapName}
+            />
+            <DetailText>
+              <BoldLabel>맵 이름:</BoldLabel> {selectedMap.mapName}
+            </DetailText>
+            <DetailText>
+              <BoldLabel>제작자:</BoldLabel> {selectedMap.producer}
+            </DetailText>
+            <DetailText>
+              <BoldLabel>위도:</BoldLabel> {selectedMap.latitude}
+            </DetailText>
+            <DetailText>
+              <BoldLabel>경도:</BoldLabel> {selectedMap.longitude}
+            </DetailText>
+            <DetailText>
+              <BoldLabel>수행해야 하는 미션:</BoldLabel> {selectedMap.missionIds.join(', ')}
+            </DetailText>
+            <CopyButton onClick={handleCopyText}>
+              <FaCopy /> 맵 이름 복사
+            </CopyButton>
+          </RightPanel>
+        )}
       </Content>
     </Container>
   );
