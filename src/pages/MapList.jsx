@@ -81,7 +81,7 @@ const MapCard = styled.div`
   border: 7px solid ${(props) => (props.selected ? '#009aaa' : '#aaa')};
   border-radius: 10px;
   overflow: hidden;
-  width: 300px; /* 크기 축소 */
+  width: 290px; /* 크기 축소 */
   height: 300px;
   cursor: pointer;
   transition: border-color 0.3s, background-color 0.3s, opacity 0.3s;
@@ -96,8 +96,8 @@ const MapCard = styled.div`
 `;
 
 const MapImage = styled.img`
-  width: 285px;
-  height: 285px;
+  width: 270px;
+  height: 270px;
   object-fit: cover;
   margin-top: 3px;
   opacity: 1;
@@ -209,23 +209,35 @@ const MapList = () => {
   const navigate = useNavigate();
   const [mapsData, setMapsData] = useState([]); // 맵 데이터 상태
   const [selectedMap, setSelectedMap] = useState(null); // 선택된 맵 상태
+  const [currentPage, setCurrentPage] = useState(0); // 현재 페이지
+  const [pageSize, setPageSize] = useState(3); // 페이지 크기
 
   // 데이터 가져오기
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get('http://localhost:7757/api/map/all');
-        if (response.data.success) {
-          setMapsData(response.data.response.content);
-          setSelectedMap(response.data.response.content[0]); // 첫 번째 맵 선택
-        }
-      } catch (error) {
-        console.error('맵 데이터를 가져오는 중 오류가 발생했습니다:', error);
+  const fetchData = async (page = 0, size = 3) => {
+    try {
+      const response = await axios.get(`http://localhost:7757/api/map/all`, {
+        params: { page, size }, // 쿼리 파라미터 추가
+      });
+      if (response.data.success) {
+        setMapsData(response.data.response.content);
+        setSelectedMap(response.data.response.content[0]); // 첫 번째 맵 선택
       }
-    };
-
-    fetchData();
-  }, []);
+    } catch (error) {
+      console.error('맵 데이터를 가져오는 중 오류가 발생했습니다:', error);
+    }
+  };
+  
+  useEffect(() => {
+    fetchData(currentPage, pageSize);
+  }, [currentPage, pageSize]);
+  
+  const handlePageChange = (direction) => {
+    if (direction === "prev" && currentPage > 0) {
+      setCurrentPage((prev) => prev - 1);
+    } else if (direction === "next") {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
 
   // 맵 이름 복사 로직
   const handleCopyText = () => {
@@ -282,7 +294,7 @@ const MapList = () => {
                 onClick={() => setSelectedMap(map)} // 선택된 맵 상태 갱신
               >
                 <MapImage
-                  src={`http://localhost:7757/images/${map.mapImage}`}
+                  src={`${map.mapImage}`}
                   alt={map.mapName}
                 />
                 <MapName>{map.mapName}</MapName>
@@ -293,10 +305,10 @@ const MapList = () => {
             </AddMapCard>
           </MapGrid>
           <NavigationButtons>
-            <NavButton>
+            <NavButton onClick={() => handlePageChange("prev")}>
               <FaArrowLeft />
             </NavButton>
-            <NavButton>
+            <NavButton onClick={() => handlePageChange("next")}>
               <FaArrowRight />
             </NavButton>
           </NavigationButtons>
@@ -306,7 +318,7 @@ const MapList = () => {
         {selectedMap && (
           <RightPanel>
             <MapDetailImage
-              src={`http://localhost:7757/images/${selectedMap.mapImage}`}
+              src={`${selectedMap.mapImage}`}
               alt={selectedMap.mapName}
             />
             <DetailText>

@@ -245,8 +245,10 @@ const MapCreate = () => {
   };
 
   const handleSave = async () => {
+    const formData = new FormData();
+
     // Create the mapDTO object
-    const requestData = {
+    const mapData = {
       mapName: roomName,
       latitude: latitude || 0, // Default to 0 if undefined
       longitude: longitude || 0,
@@ -258,23 +260,45 @@ const MapCreate = () => {
         commandNo: parseInt(pin.commandNo, 10), // 미션 번호를 정수로 변환
       })),
     };
+    formData.append(
+      "dto", // 서버에서 받을 필드 이름
+      new Blob([JSON.stringify(mapData)], { type: "application/json" }) // JSON 데이터를 Blob으로 변환
+    );
+
+    //   // Append image file (fetch the server image as a blob)
+    // const imageBlob = await fetch(logoImage).then((res) => res.blob()); // 서버 이미지 URL 사용
+    // formData.append("file", imageBlob, "mapImage.jpg"); // 서버에서 받을 필드 이름: file
+
+      // Google Static Map 이미지 Blob으로 변환
+    const staticMapUrl = getStaticMapUrl(latitude, longitude, 14); // zoomLevel은 필요에 따라 조정
+    const imageBlob = await fetch(staticMapUrl).then((res) => res.blob());
+    formData.append("file", imageBlob, "staticMap.jpg");
   
     try {
       // Send POST request to the server
-      const response = await axios.post("http://localhost:7757/test", requestData, {
+      const response = await axios.post("http://localhost:7757/api/map/create", formData, {
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "multipart/form-data",
         },
       });
   
       // Log server response
       console.log("Server Response:", response.data);
       alert("맵 저장 성공!");
+      navigate("/"); // '/' 경로로 리다이렉트
     } catch (error) {
       // Handle errors
       console.error("Error during POST request:", error.response?.data || error.message);
       alert("Failed to save map.");
     }
+  };
+
+  const getStaticMapUrl = (lat, lng, zoomLevel) => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    const size = '640x640';
+    const mapType = 'satellite';
+
+    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoomLevel}&size=${size}&maptype=${mapType}&key=${apiKey}`;
   };
   
 
@@ -286,7 +310,6 @@ const MapCreate = () => {
           <Title>-Create Session-</Title>
           <Input
             type="text"
-            value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             placeholder='맵 이름을 입력해주세요.'
           />
@@ -335,10 +358,14 @@ const MapCreate = () => {
                   value={pin.commandNo}
                   onChange={(e) => handleMissionChange(pin.id, e.target.value)}
                 >
+                  <option value="4">이륙</option>
+
                   <option value="0">미션 선택</option>
-                  <option value="1">최저속도제한</option>
-                  <option value="2">고속도달</option>
-                  <option value="3">탐지</option>
+                  <option value="1">편대 비행</option>
+                  <option value="2">공대지 미사일</option>
+                  <option value="3">공대공 전투</option>
+                  <option value="5">공대지 폭격</option>
+                  <option value="6">자율 비행</option>
                 </Select>
               </SelectWrapper>
             ))}
