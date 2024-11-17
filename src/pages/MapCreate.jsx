@@ -254,7 +254,7 @@ const MapCreate = () => {
       longitude: longitude || 0,
       producer: "제작자", // Replace with a dynamic value if needed
       mission: pins.map((pin) => ({
-        pinNo: pin.id,
+        pinNo: pin.id - 1 , 
         x: pin.blockX,
         y: pin.blockY,
         commandNo: parseInt(pin.commandNo, 10), // 미션 번호를 정수로 변환
@@ -276,7 +276,7 @@ const MapCreate = () => {
   
     try {
       // Send POST request to the server
-      const response = await axios.post("http://localhost:7757/api/map/create", formData, {
+      const response = await axios.post("http://125.132.216.190:7757/api/map/create", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -358,12 +358,11 @@ const MapCreate = () => {
                   value={pin.commandNo}
                   onChange={(e) => handleMissionChange(pin.id, e.target.value)}
                 >
-                  <option value="4">이륙</option>
-
                   <option value="0">미션 선택</option>
-                  <option value="1">편대 비행</option>
+                  <option value="1">이륙</option>
                   <option value="2">공대지 미사일</option>
-                  <option value="3">공대공 전투</option>
+                  <option value="3">편대 비행</option>
+                  <option value="4">공대공 전투</option>
                   <option value="5">공대지 폭격</option>
                   <option value="6">자율 비행</option>
                 </Select>

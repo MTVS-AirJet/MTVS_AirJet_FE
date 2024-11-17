@@ -215,7 +215,7 @@ const MapList = () => {
   // 데이터 가져오기
   const fetchData = async (page = 0, size = 3) => {
     try {
-      const response = await axios.get(`http://localhost:7757/api/map/all`, {
+      const response = await axios.get(`http://125.132.216.190:7757/api/map/all`, {
         params: { page, size }, // 쿼리 파라미터 추가
       });
       if (response.data.success) {
