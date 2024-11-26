@@ -21,10 +21,22 @@ const Modal = styled.div`
   padding: 20px;
   border-radius: 10px;
   width: 800px;
+  height: auto;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  background-color: #b6e3ffd9;
   display: flex;
   gap: 20px;
+  flex-direction: row; /* 기본 스타일 유지 */
+  background-color: #b6e3ffd9;
+
+  @media (max-width: 1024px) {
+    width: 90%; /* 화면 크기가 작아질 때 비율을 유지 */
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column; /* 작은 화면에서는 세로 정렬 */
+    width: 95%;
+    height: auto;
+  }
 `;
 
 const CenterMarkerWrapper = styled.div`
@@ -68,11 +80,16 @@ const VerticalLine = styled.div`
 `;
 
 const MapWrapper = styled.div`
-  width: 370px;
+  width: 370px; /* 이전 스타일 유지 */
   height: 370px;
   border-radius: 5px;
   overflow: hidden;
   position: relative;
+
+  @media (max-width: 768px) {
+    width: 300px; /* 작은 화면에서 약간 줄임 */
+    height: 300px;
+  }
 `;
 
 const InputWrapper = styled.div`
@@ -82,6 +99,11 @@ const InputWrapper = styled.div`
   justify-content: center;
   align-items: flex-start;
   gap: 10px;
+
+  @media (max-width: 768px) {
+    align-items: center; /* 모바일에서 정렬 */
+    width: 100%;
+  }
 `;
 
 const Title = styled.h1`
@@ -95,6 +117,12 @@ const InputGroup = styled.div`
   display: flex;
   width: 100%;
   justify-content: space-between;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
 `;
 
 const LocalNameInput = styled.input`
@@ -104,6 +132,10 @@ const LocalNameInput = styled.input`
   border-radius: 5px;
   font-size: 1rem;
   background-color: white;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 const LatitudLongitudeInput = styled.input`
@@ -112,8 +144,13 @@ const LatitudLongitudeInput = styled.input`
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 1rem;
+
   &::placeholder {
     color: black;
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
   }
 `;
 
@@ -125,13 +162,18 @@ const Button = styled.button`
   border-radius: 5px;
   font-size: 1rem;
   cursor: pointer;
+
   &:hover {
     background-color: #0056b3;
+  }
+
+  @media (max-width: 768px) {
+    width: 100%; /* 버튼 크기를 화면에 맞게 확장 */
   }
 `;
 
 const MissionButton = styled(Button)`
-  width: 100%;
+  width: 100%; /* 버튼 가로 폭 채우기 */
 `;
 
 const CloseButton = styled.button`
@@ -203,7 +245,7 @@ const MapSearch = () => {
 
     try {
       const response = await axios.post(
-        'http://125.132.216.190:7757/api/geocode',
+        'http://43.202.221.239/api/geocode',
         { text: region }
       );
 

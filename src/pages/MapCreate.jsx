@@ -73,7 +73,7 @@ const Pin = styled.div`
   position: absolute; /* 핀이 지도 위에 위치하도록 설정 */
   width: 20px;
   height: 20px;
-  background-color: red;
+  background-color: ${(props) => (props.isStartPin ? 'green' : 'red')};
   color: white;
   font-size: 12px;
   font-weight: bold;
@@ -194,7 +194,7 @@ const MapCreate = () => {
   const location = useLocation();
 
   const { latitude, longitude, imageData } = location.state || {};
-  const [roomName, setRoomName] = React.useState('a');
+  const [roomName, setRoomName] = React.useState('');
   const [pins, setPins] = useState([]);
 
   // 지도 클릭 핸들러
@@ -221,7 +221,7 @@ const MapCreate = () => {
         blockY, 
         screenX: x, 
         screenY: y,
-        commandNo: "0", // 기본 미션 선택 번호
+        commandNo: prevPins.length === 0 ? "0" : "-1", // 기본 미션 선택 번호
         },
     ]);
   };
@@ -244,7 +244,25 @@ const MapCreate = () => {
     );
   };
 
+  //  저장 버튼 
   const handleSave = async () => {
+  // 맵 이름 확인
+  if (!roomName.trim()) {
+    alert("맵 이름을 입력해주세요.");
+    return;
+  }
+
+  if (pins.length === 0) {
+    alert("핀을 최소 1개 이상 추가해주세요.");
+    return;
+  }
+
+  // 미션 선택 여부 확인
+  const unselectedMission = pins.find((pin) => pin.commandNo === "-1");
+  if (unselectedMission) {
+    alert(`핀 번호 ${unselectedMission.id}의 미션을 선택해주세요.`);
+    return;
+  }
     const formData = new FormData();
 
     // Create the mapDTO object
@@ -254,7 +272,7 @@ const MapCreate = () => {
       longitude: longitude || 0,
       producer: "제작자", // Replace with a dynamic value if needed
       mission: pins.map((pin) => ({
-        pinNo: pin.id - 1 , 
+        pinNo: pin.id - 2, 
         x: pin.blockX,
         y: pin.blockY,
         commandNo: parseInt(pin.commandNo, 10), // 미션 번호를 정수로 변환
@@ -276,7 +294,7 @@ const MapCreate = () => {
   
     try {
       // Send POST request to the server
-      const response = await axios.post("http://125.132.216.190:7757/api/map/create", formData, {
+      const response = await axios.post("http://43.202.221.239/api/map/create", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -327,16 +345,17 @@ const MapCreate = () => {
                 fill="none"
               />
             </Lines>
-            {pins.map((pin) => (
+            {pins.map((pin, index) => (
               <Pin
                 key={pin.id}
                 style={{ left: `${pin.screenX}px`, top: `${pin.screenY}px` }}
+                isStartPin={index === 0}
                 onClick={(e) => {
                   e.stopPropagation(); // 부모 클릭 이벤트 차단
                   handlePinRemove(pin.id); // 핀 삭제
                 }}
               >
-                {pin.id}
+                {index === 0 ? 'S' : index} {/* 1번 핀은 'S', 나머지는 번호 */}
               </Pin>
             ))}
           </MapWrapper>
@@ -351,20 +370,26 @@ const MapCreate = () => {
             </InfoRow>
           </LocationInfo>
           <SelectGroup>
-            {pins.map((pin) => (
+            {pins.map((pin, index) => (
               <SelectWrapper key={pin.id}>
-                <PinNumber>{pin.id}</PinNumber>
+                <PinNumber>{index === 0 ? 'S' : index}</PinNumber>
                 <Select
                   value={pin.commandNo}
                   onChange={(e) => handleMissionChange(pin.id, e.target.value)}
                 >
-                  <option value="0">미션 선택</option>
-                  <option value="1">이륙</option>
-                  <option value="2">공대지 미사일</option>
-                  <option value="3">편대 비행</option>
-                  <option value="4">공대공 전투</option>
-                  <option value="5">공대지 폭격</option>
-                  <option value="6">자율 비행</option>
+                  {index === 0 ? (
+                    // 1번 핀: 이륙만 선택 가능
+                    <>
+                      <option value="0">이륙</option>
+                    </>
+                  ) : (
+                    // 2번 핀부터: 이륙 제외한 옵션만 표시
+                    <>
+                      <option value="-1">미션 선택</option>
+                      <option value="1">편대 비행</option>
+                      <option value="2">공대지 미사일</option>
+                    </>
+                  )}
                 </Select>
               </SelectWrapper>
             ))}

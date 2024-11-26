@@ -15,8 +15,13 @@ const Container = styled.div`
   box-sizing: border-box;
   position: relative;
   background-image: url('${logoImage}');
-  background-size: 100% 100%;
+  background-size: cover;
   background-position: center;
+
+  @media (max-width: 768px) {
+    flex-direction: column; /* 작은 화면에서는 세로 배치 */
+    height: auto;
+  }
 `;
 
 const Overlay = styled.div`
@@ -34,10 +39,26 @@ const Content = styled.div`
   position: relative;
   z-index: 1;
   display: flex;
-  flex-direction: row; /* LeftPanel과 RightPanel이 나란히 배치되도록 설정 */
-  width: 100%;
-`;
+  flex-direction: row; /* 기본적으로 LeftPanel과 RightPanel을 가로로 배치 */
+  justify-content: center; /* 수평 중앙 정렬 */
+  align-items: center; /* 수직 중앙 정렬 */
+  width: 90%; /* 기본 너비를 90%로 설정 */
+  max-width: 15000px; /* 최대 너비 제한 */
+  margin: 0 auto; /* 화면 중앙 정렬 */
+  height: 100%; /* 부모의 높이에 맞춤 */
+  min-height: 100vh; /* 화면 전체 높이를 차지하도록 설정 */
 
+  @media (max-width: 1024px) {
+    flex-direction: column; /* 태블릿 이하에서는 세로 배치 */
+    width: 95%; /* 너비를 약간 더 확장 */
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column; /* 모바일에서는 세로 배치 */
+    width: 100%; /* 모바일 화면에 맞춰 너비 100% */
+    padding: 10px; /* 좌우 여백 추가 */
+  }
+`;
 const LeftPanel = styled.div`
   flex: 1;
   padding: 15px;
@@ -51,6 +72,10 @@ const LeftPanel = styled.div`
   align-items: center;
   text-align: center;
   gap: 8px;
+  @media (max-width: 768px) {
+    margin: 0; /* 모바일에서 마진 제거 */
+    width: 100%; /* 가로폭 꽉 채우기 */
+  }
 `;
 
 const Title = styled.h1`
@@ -215,7 +240,7 @@ const MapList = () => {
   // 데이터 가져오기
   const fetchData = async (page = 0, size = 3) => {
     try {
-      const response = await axios.get(`http://125.132.216.190:7757/api/map/all`, {
+      const response = await axios.get(`http://43.202.221.239/api/map/all`, {
         params: { page, size }, // 쿼리 파라미터 추가
       });
       if (response.data.success) {
@@ -259,23 +284,6 @@ const MapList = () => {
     document.body.removeChild(textArea); // 텍스트 영역 제거
   };
 
-  // // 맵 이름 복사 로직
-  // const handleCopyText = () => {
-  //   const textArea = document.createElement('textarea');
-  //   textArea.value = selectedMap.name;
-  //   document.body.appendChild(textArea);
-  //   textArea.select();
-  //   textArea.setSelectionRange(0, 99999); // 선택 범위 설정
-
-  //   try {
-  //     document.execCommand('copy'); // 텍스트 복사
-  //     alert(`맵 이름이 복사되었습니다! 맵 이름: ${selectedMap.name}`);
-  //   } catch (err) {
-  //     console.error('복사 실패:', err); // 복사 실패 시 오류 출력
-  //   }
-
-  //   document.body.removeChild(textArea); // 텍스트 영역 제거
-  // };
   return (
     <Container>
       <Overlay />
@@ -332,9 +340,6 @@ const MapList = () => {
             </DetailText>
             <DetailText>
               <BoldLabel>경도:</BoldLabel> {selectedMap.longitude}
-            </DetailText>
-            <DetailText>
-              <BoldLabel>수행해야 하는 미션:</BoldLabel> {selectedMap.missionIds.join(', ')}
             </DetailText>
             <CopyButton onClick={handleCopyText}>
               <FaCopy /> 맵 이름 복사
