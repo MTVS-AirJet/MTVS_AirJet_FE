@@ -245,7 +245,7 @@ const MapSearch = () => {
 
     try {
       const response = await axios.post(
-        'http://43.202.221.239/api/geocode',
+        'http://52.78.175.85/api/geocode',
         { text: region }
       );
 

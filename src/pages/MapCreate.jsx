@@ -195,6 +195,7 @@ const MapCreate = () => {
 
   const { latitude, longitude, imageData } = location.state || {};
   const [roomName, setRoomName] = React.useState('');
+  const [producer, setProducer] = React.useState(''); // 제작자 상태 추가
   const [pins, setPins] = useState([]);
 
   // 지도 클릭 핸들러
@@ -257,6 +258,11 @@ const MapCreate = () => {
     return;
   }
 
+  if (!producer.trim()) {
+    alert('제작자를 입력해주세요.');
+    return;
+  }
+
   // 미션 선택 여부 확인
   const unselectedMission = pins.find((pin) => pin.commandNo === "-1");
   if (unselectedMission) {
@@ -270,7 +276,7 @@ const MapCreate = () => {
       mapName: roomName,
       latitude: latitude || 0, // Default to 0 if undefined
       longitude: longitude || 0,
-      producer: "제작자", // Replace with a dynamic value if needed
+      producer: producer, // Replace with a dynamic value if needed
       mission: pins.map((pin) => ({
         pinNo: pin.id - 2, 
         x: pin.blockX,
@@ -294,7 +300,7 @@ const MapCreate = () => {
   
     try {
       // Send POST request to the server
-      const response = await axios.post("http://43.202.221.239/api/map/create", formData, {
+      const response = await axios.post("http://52.78.175.85/api/map/create", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -330,6 +336,11 @@ const MapCreate = () => {
             type="text"
             onChange={(e) => setRoomName(e.target.value)}
             placeholder='맵 이름을 입력해주세요.'
+          />
+          <Input
+            type="text"
+            onChange={(e) => setProducer(e.target.value)} // 제작자 입력 핸들러
+            placeholder="제작자를 입력해주세요."
           />
           <MapWrapper onClick={handleMapClick}>
             {imageData ? (
