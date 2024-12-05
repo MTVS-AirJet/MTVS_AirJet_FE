@@ -103,6 +103,7 @@ const MapGrid = styled.div`
 `;
 
 const MapCard = styled.div`
+  position: relative; /* 버튼을 위치시키기 위한 상대 위치 지정 */
   border: 7px solid ${(props) => (props.selected ? '#009aaa' : '#aaa')};
   border-radius: 10px;
   overflow: hidden;
@@ -117,6 +118,29 @@ const MapCard = styled.div`
   opacity: ${(props) => (props.selected ? 0.8 : 1)}; /* 선택되면 전체 어둡게 */
   &:hover {
     border-color: #009eee;
+  }
+`;
+
+const DeleteButton = styled.button`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #000000; /* 빨간색 배경 */
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.8rem;
+  cursor: pointer;
+  z-index: 2; /* 맵 카드보다 위에 표시 */
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #ff1a1c; /* hover 시 더 진한 빨간색 */
   }
 `;
 
@@ -264,6 +288,24 @@ const MapList = () => {
     }
   };
 
+  // 맵 삭제 로직
+  const handleDeleteMap = async (mapName) => {
+    try {
+      const response = await axios.get(
+        `http://52.78.175.85/api/map/delete/${mapName}`
+      );
+      if (response.data.success) {
+        alert(`맵 ${mapName}이(가) 성공적으로 삭제되었습니다.`);
+        fetchData(currentPage, pageSize); // 데이터 새로고침
+      } else {
+        alert(`맵 삭제에 실패했습니다: ${response.data.message}`);
+      }
+    } catch (error) {
+      console.error('맵 삭제 중 오류가 발생했습니다:', error);
+      alert('맵 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   // 맵 이름 복사 로직
   const handleCopyText = () => {
     if (!selectedMap) return;
@@ -301,6 +343,12 @@ const MapList = () => {
                 selected={selectedMap && map.id === selectedMap.id}
                 onClick={() => setSelectedMap(map)} // 선택된 맵 상태 갱신
               >
+                <DeleteButton onClick={(e) => {
+                  e.stopPropagation(); // 부모 클릭 이벤트 방지
+                  handleDeleteMap(map.mapName);
+                }}>
+                  ×
+                </DeleteButton>
                 <MapImage
                   src={`${map.mapImage}`}
                   alt={map.mapName}
